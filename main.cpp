@@ -2,11 +2,6 @@
 #include <fstream>
 
 using namespace std;
-
-char delimitador = ':';
-char nombreDeArchivo[15] = "inventario.txt";
-int cantidadDeProductos;
-Producto inventarioDeProductos[30];
 struct Producto {
     int codigoDeProducto;
     int precioUnitario;
@@ -14,7 +9,7 @@ struct Producto {
     int posicion;
 };
 struct RegistroDeInventario {
-    bool existe;
+    bool existe = false;
     Producto producto;
 };
 struct Pedido {
@@ -22,53 +17,54 @@ struct Pedido {
     int cantidadComprada;
 };
 
+// ********* variables globales **************** 
+char delimitador = ':';
+char nombreDeArchivo[15] = "inventario.txt";
+int cantidadDeProductos;
+Producto inventarioDeProductos[30];
+// *********************************************
+
+void reachazarPedido(string motivo) {
+    cout << "No puede entregarse el pedido: " << motivo << endl;
+}
+
 RegistroDeInventario chequearInventario (int codigoDeProducto) {
     RegistroDeInventario registroDeInventario;
     for (int i =0; i < cantidadDeProductos ; i++){
         if(inventarioDeProductos[i].codigoDeProducto == codigoDeProducto){
             registroDeInventario.existe = true;
             registroDeInventario.producto = inventarioDeProductos[i];
-            return registroDeInventario;
         };
     };
-    reachazarPedido("el producto solicitado no existe");
-    registroDeInventario.existe = false;
-    registroDeInventario.producto = {};
     return registroDeInventario;
 };
 
-void reachazarPedido(string motivo) {
-    cout << "No puede entregarse el pedido: " << motivo << endl;
-}
 
-void tomarPedido(Pedido (&carritoDeCompra)[30], Producto (&inventarioDeProductos)[30]) {
+
+int tomarPedido(Pedido (&carritoDeCompra)[30]) {
     int contador = 0;
     int subtotal;
     Pedido pedido;
     RegistroDeInventario registroDeInventario;
     cout<< "A continuacion, ingrese el pedido. Para terminar, ingrese codigo de producto: 0" << endl;
     while (true) {
-        pedido = {}; // reseteamos la estructura del pedido
-        cout
-            << "Porfavor, ingrese el codigo del producto numero " 
-            << contador + 1 
-            << " que desea adquirir." << endl;
+        cout << "Porfavor, ingrese el codigo del producto que desea adquirir." << endl;
         cin >> pedido.codigoDeProducto;
 
         if(pedido.codigoDeProducto == 0) break;
-
-        cout 
-            << "Ingrese la cantidad que requiere comprar del producto " 
-            << pedido.codigoDeProducto << "." << endl;
-        cin >> pedido.cantidadComprada;
-
         registroDeInventario = chequearInventario(pedido.codigoDeProducto);
         if (registroDeInventario.existe){
+            cout 
+                << "Ingrese la cantidad que requiere comprar del producto " 
+                << pedido.codigoDeProducto << "." << endl;
+            cin >> pedido.cantidadComprada;
+
             if(registroDeInventario.producto.stock < pedido.cantidadComprada) 
                 reachazarPedido("stock insuficiente");
             else {
                 subtotal = registroDeInventario.producto.precioUnitario * pedido.cantidadComprada;
-                if(subtotal == 999,99)
+                // chequear porque esta comparacion siempre es cierta, algo esta funcionando mal
+                if(float(subtotal) == 999,99)
                     cout << "El pedido solicitado tiene un importe de $9999,99" << endl;
                 carritoDeCompra[contador] = {
                     pedido.codigoDeProducto,
@@ -76,16 +72,17 @@ void tomarPedido(Pedido (&carritoDeCompra)[30], Producto (&inventarioDeProductos
                 };
                 contador++;
             };
+        }else {
+            reachazarPedido("el producto solicitado no existe");
         }
     };
+    return contador;
 };
-
 
 // tenemos que restar las unidades compradas de cada producto al stock de cada producto.
-bool procesarCompra(Pedido carritoDeCompra[30]){
-    ofstream archivoModoEscritura(nombreDeArchivo);
-
-};
+// bool procesarCompra(Pedido carritoDeCompra[30]){
+//     ofstream archivoModoEscritura(nombreDeArchivo);
+// };
 
 // la idea de levantar el inventario en memoria es que no estemos abriendo y cerrando el archivo por cada consulta
 void levantarInventarioEnMemoria() {
@@ -108,20 +105,29 @@ void levantarInventarioEnMemoria() {
 
 
 int main() {
-    
+    int cantidadDeProductosAdquiridos;
     Pedido carritoDeCompra[30];
-    levantarInventarioEnMemoria();
-    cout << cantidadDeProductos <<endl;
-
+    levantarInventarioEnMemoria();    
     // esta parte es para debuguear el inventario, despues hay que eliminarla para la entrega
+    cout << "**************************** INVENTARIO ACTUAL *********************************" << endl;
     for( int i =0; i < cantidadDeProductos; i++){
         cout << "codigo de producto: " << inventarioDeProductos[i].codigoDeProducto;
         cout << " precio unitario: " << inventarioDeProductos[i].precioUnitario;
         cout << " stock: " << inventarioDeProductos[i].stock;
         cout << " posicion en inventario: " << inventarioDeProductos[i].posicion << endl;
     };
-    tomarPedido(carritoDeCompra, inventarioDeProductos);
-    procesarCompra(carritoDeCompra);
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+    cantidadDeProductosAdquiridos = tomarPedido(carritoDeCompra);
+    // esta parte es para debuguear el carrito de compra, despues hay que eliminarla para la entrega
+    cout << "**************************** CARRITO DE COMPRA *********************************" << endl;
+    for( int i =0; i < cantidadDeProductosAdquiridos; i++){
+        cout << "Producto adquirido: " << carritoDeCompra[i].codigoDeProducto;
+        cout << " cantidad solicitada: " << carritoDeCompra[i].cantidadComprada << endl;
+    };
+    cout << "********************************************************************************" << endl;
+    cout << endl;
+    // procesarCompra(carritoDeCompra);
     cin.get();
     return 0;
 };
