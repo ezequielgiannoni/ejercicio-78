@@ -13,9 +13,8 @@ struct Producto {
 };
 struct RegistroDeInventario {
     bool existe;
-    int codigoDeProducto;
-    int precioUnitario;
-    int stock;
+    int posicion;
+    Producto producto;
 };
 
 struct Pedido {
@@ -61,68 +60,99 @@ struct Pedido {
 //     return;
 // };
 
-RegistroDeInventario chequearInventario (int codigoDeProducto, int cantidadSolicitada) {
+RegistroDeInventario buscarRegistroEnInventario (int codigoDeProducto) {
     ifstream archivoModoLectura(nombreDeArchivo);
     RegistroDeInventario registroDeInventario;
+    int posicionActual = 0;
     string linea;
     while(archivoModoLectura >> linea){
-        registroDeInventario.codigoDeProducto = stoi(linea.substr(0,linea.find(delimitador)));
-        if (registroDeInventario.codigoDeProducto == codigoDeProducto){
+        registroDeInventario.producto.codigoDeProducto = stoi(linea.substr(0,linea.find(delimitador)));
+        if (registroDeInventario.producto.codigoDeProducto == codigoDeProducto){
             registroDeInventario.existe = true;
-            registroDeInventario.stock = stoi(linea.substr(linea.find_last_of(delimitador) + 1));
-            registroDeInventario.precioUnitario = stoi(linea.substr(linea.find(delimitador)+1, linea.find_last_of(delimitador) + 1));
-            // cout << "codigo de producto " << registroDeInventario.codigoDeProducto << endl ;
-            // cout << "precio de producto " << registroDeInventario.precioUnitario << endl ;
-            // cout << "stock de producto " << registroDeInventario.stock << endl ;
+            registroDeInventario.posicion = posicionActual;
+            registroDeInventario.producto.stock = stoi(linea.substr(linea.find_last_of(delimitador) + 1));
+            registroDeInventario.producto.precioUnitario = stoi(linea.substr(linea.find(delimitador)+1, linea.find_last_of(delimitador) + 1));
+            cout << "index del producto " << registroDeInventario.posicion << endl;
+            cout << "codigo de producto " << registroDeInventario.producto.codigoDeProducto << endl ;
+            cout << "precio de producto " << registroDeInventario.producto.precioUnitario << endl ;
+            cout << "stock de producto " << registroDeInventario.producto.stock << endl ;
         }
+        posicionActual++;
     };
     return registroDeInventario;
 };
 
-// bool tomarPedido(Pedido (&carritoDeCompra)[30]) {
-//     int counter = 0;
-//     Pedido pedido;
-//     cout<< "A continuacion, ingrese el pedido. Para terminar, ingrese codigo de producto: 0" << endl;
-//     while (true) {
-//         pedido = {};
-//         cout << "Porfavor, ingrese el codigo del producto numero " << counter + 1 << " que desea adquirir." << endl;
-//         cin >> pedido.codigoDeProducto;
-//         if(pedido.codigoDeProducto == 0){
-//             break;
-//         };
-//         cout << "Ingrese la cantidad que requiere comprar del producto " << pedido.codigoDeProducto << "." << endl;
-//         cin >> pedido.cantidadComprada;
-//         if (chequearInventario()){
-//             carritoDeCompra[counter] = {
-//                 pedido.codigoDeProducto,
-//                 pedido.cantidadComprada
-//             };
-//         };
-//     };
-//     return true;
+void reachazarPedido(string motivo) {
+    cout << "No puede entregarse el pedido: " << motivo << endl;
+}
+
+void tomarPedido(Pedido (&carritoDeCompra)[30]) {
+    int contador = 0;
+    int subtotal;
+    Pedido pedido;
+    RegistroDeInventario registroDeInventario;
+    cout<< "A continuacion, ingrese el pedido. Para terminar, ingrese codigo de producto: 0" << endl;
+    while (true) {
+        pedido = {}; // reseteamos la estructura del pedido
+        cout
+            << "Porfavor, ingrese el codigo del producto numero " 
+            << contador + 1 
+            << " que desea adquirir." << endl;
+        cin >> pedido.codigoDeProducto;
+
+        if(pedido.codigoDeProducto == 0) break;
+
+        cout 
+            << "Ingrese la cantidad que requiere comprar del producto " 
+            << pedido.codigoDeProducto << "." << endl;
+        cin >> pedido.cantidadComprada;
+
+        registroDeInventario = buscarRegistroEnInventario(pedido.codigoDeProducto);
+
+        if (!registroDeInventario.existe)
+            reachazarPedido("el producto solicitado no existe");
+        else if(registroDeInventario.producto.stock < pedido.cantidadComprada) 
+            reachazarPedido("stock insuficiente");
+        else {
+            subtotal = registroDeInventario.producto.precioUnitario * pedido.cantidadComprada;
+            if(subtotal == 999,99)
+                cout << "El pedido solicitado tiene un importe de $9999,99" << endl;
+            carritoDeCompra[contador] = {
+                pedido.codigoDeProducto,
+                pedido.cantidadComprada
+            };
+            contador++;
+        };
+    };
+};
+
+
+
+// bool procesarCompra(Pedido carritoDeCompra[30]){
+
 // };
 
-// void levantarInventarioEnMemoria(Producto (&arregloDeProductos)[30]) {
-//     int cantidadDeProductos = 6;
-//     for(int i; i <= cantidadDeProductos; i++){
-//         arregloDeProductos[i].codigoDeProducto = i;
-//         arregloDeProductos[i].precioUnitario = (i*10);
-//         arregloDeProductos[i].stock = (i*10);
-//     };
-// };
+void levantarInventarioEnMemoria(Producto (&arregloDeProductos)[30]) {
+    int cantidadDeProductos = 6;
+    for(int i; i <= cantidadDeProductos; i++){
+        arregloDeProductos[i].codigoDeProducto = i;
+        arregloDeProductos[i].precioUnitario = (i*10);
+        arregloDeProductos[i].stock = (i*10);
+    };
+};
 
 int main() {
-    chequearInventario(6,10);
-    // Producto inventarioDeProductos[30];
-    // Pedido carritoDeCompra[30];
-    // levantarInventarioEnMemoria(inventarioDeProductos);
-    // for( int i =0; i < 6; i++){
-    //     cout << "codigo de producto: " << inventarioDeProductos[i+1].codigoDeProducto;
-    //     cout << " precio unitario: " << inventarioDeProductos[i+1].precioUnitario;
-    //     cout << " stock: " << inventarioDeProductos[i+1].stock << endl;
-    // };
-    // tomarPedido(carritoDeCompra);
-    // cin.get();
+    Producto inventarioDeProductos[30];
+    Pedido carritoDeCompra[30];
+    levantarInventarioEnMemoria(inventarioDeProductos);
+    for( int i =0; i < 6; i++){
+        cout << "codigo de producto: " << inventarioDeProductos[i+1].codigoDeProducto;
+        cout << " precio unitario: " << inventarioDeProductos[i+1].precioUnitario;
+        cout << " stock: " << inventarioDeProductos[i+1].stock << endl;
+    };
+    tomarPedido(carritoDeCompra);
+    // procesarCompra(carritoDeCompra);
+    cin.get();
     return 0;
 };
 
